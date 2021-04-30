@@ -1,6 +1,6 @@
 # Predicting Stock Prices with Deep Learning
 
-##Project Overview
+## Project Overview
 
 **Deep learning** is part of a broader family of machine learning methods based on artificial neural networks, which are [inspired](https://en.wikipedia.org/wiki/Deep_learning) by our brain's own network of neurons. Among the popular deep learning paradigms, [**Long Short-Term Memory (LSTM)**](https://en.wikipedia.org/wiki/Long_short-term_memory) is a specialized archicture that can "memorize" patterns from historical sequences of data and extrapolate such patterns for future events. 
 
