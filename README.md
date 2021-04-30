@@ -441,4 +441,5 @@ print("Tomorrow's price:", round(to_plot_data_y_test_pred[plot_range-1], 2))
 ```
 </details>
 
-**Disclaimer: this content is for educational purposes only and does NOT constitute investment advice. **
+
+**Disclaimer: this content is for educational purposes only and is NOT investment advice. **
