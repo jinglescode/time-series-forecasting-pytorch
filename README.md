@@ -4,7 +4,7 @@
 
 **Deep learning** is part of a broader family of machine learning methods based on artificial neural networks, which are [inspired](https://en.wikipedia.org/wiki/Deep_learning) by our brain's own network of neurons. Among the popular deep learning paradigms, [**Long Short-Term Memory (LSTM)**](https://en.wikipedia.org/wiki/Long_short-term_memory) is a specialized archicture that can "memorize" patterns from historical sequences of data and extrapolate such patterns for future events. 
 
-Since the stock market is naturally comprised of sequences of prices and volumes, more and more quantitative researchers and finance professional are using LTSM to model and predict stock price movements. In this project, we will go through the end-to-end machine learning workflow of developing an LTSM model to predict stock market prices using PyTorch and Alpha Vantage APIs. 
+Since the stock market is naturally comprised of sequences of prices and volumes, more and more quantitative researchers and finance professionals are using LTSM to model and predict stock price movements. In this project, we will go through the end-to-end machine learning workflow of developing an LTSM model to predict stock market prices using PyTorch and Alpha Vantage APIs. 
 
 The project is grouped into the following sections: 
 - Data preparation: acquiring financial market data from Alpha Vantage
@@ -15,13 +15,13 @@ The project is grouped into the following sections:
 - Model evaluation
 - Predicting future stock prices
 
-This tutorial has been written in a way such that all the essential code snippets have been embedded inline. You should be able to develop, train, and test your LSTM model without referring to other external pages or documents. 
+This tutorial has been written in a way such that all the essential code snippets have been embedded inline. You should be able to develop, train, and test your machine learning model without referring to other external pages or documents. 
 
 Let's get started! 
 
 ## Data preparation: acquiring financial market data from Alpha Vantage
 
-In this project, we will train an LSTM model to predict stock price movements. Before we can build a crystal ball to predict the future, however, we need historical stock price data to train our deep learning model. To this end, we query the Alpha Vantage stock data API via a [popular python wrapper](https://github.com/RomelTorres/alpha_vantage). For the purpose of this project, we will obtain over 20 years of daily close prices for IBM from November 1999 to April 28, 2021. 
+In this project, we will train an LSTM model to predict stock price movements. Before we can build the "crystal ball" to predict the future, however, we need historical stock price data to train our deep learning model. To this end, we will query the Alpha Vantage stock data API via a [popular python wrapper](https://github.com/RomelTorres/alpha_vantage). For the purpose of this project, we will obtain over 20 years of daily close prices for IBM from November 1999 to April 28, 2021. 
 
 ![historical prices](static/figure01-history-price.png)
 
@@ -53,7 +53,7 @@ data_date, data_close_price, num_data_points, display_date_range = download_data
 ```
 </details>
 
-Please note that we are using the **adjusted close** field of Alpha Vantage's [daily adjusted API](https://www.alphavantage.co/documentation/#dailyadj) to remove any artificial price turbulances due to stock splits and/or dividend events. It is generally considered an [industry best practice](http://www.crsp.org/products/documentation/crsp-calculations) to use split/dividend adjusted prices instead of raw prices to model stock price movements. 
+Please note that we are using the **adjusted close** field of Alpha Vantage's [daily adjusted API](https://www.alphavantage.co/documentation/#dailyadj) to remove any artificial price turbulances due to stock splits and dividend payout events. It is generally considered an [industry best practice](http://www.crsp.org/products/documentation/crsp-calculations) to use split/dividend adjusted prices instead of raw prices to model stock price movements. 
 
 ## Data preparation: normalizing raw data
 
@@ -61,7 +61,7 @@ Machine learning algorithms that use [gradient descent](https://en.wikipedia.org
 
 This is where **data normalization** comes in. Normalization can increase the accuracy of your model and help the gradient descent algorithm converge more quickly towards the target minima. By bringing the input data on the same scale and reducing its variance, none of the weights in the articial neural network will be wasted on normalizing tasks, which means the LSTM model can more efficiently learn from the data and store patterns in the network. Furthermore, LSTMs are intrinsically sensitive to the scale of the input data. For the above reasons, it is crucial to normalize the data.
 
-Since stock prices can range from tens to hundreds and thousands (not to mention penny stocks) - $40 to $160 in the case of IBM - we will perform normalization on the stock prices to narrow down the range of these values before feeding the data to the LSTM model. The following code snippets rescales the data so that it has a mean of 0 and the standard deviation is 1. 
+Since stock prices can range from tens to hundreds and thousands - $40 to $160 in the case of IBM - we will perform normalization on the stock prices to narrow down the range of these values before feeding the data to the LSTM model. The following code snippets rescales the data so that it has a mean of 0 and the standard deviation is 1. 
 
 <details>
 <summary>View codes</summary>
@@ -441,4 +441,4 @@ print("Tomorrow's price:", round(to_plot_data_y_test_pred[plot_range-1], 2))
 ```
 </details>
 
-_Disclaimer: this content is for educational purposes only and does NOT constitute investment advice. _
+**Disclaimer: this content is for educational purposes only and does NOT constitute investment advice. **
