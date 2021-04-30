@@ -21,9 +21,9 @@ This tutorial has been written in a way such that all the essential code snippet
 Let's get started! 
 
 ## Installing Python libraries
-We recommend using **Python 3.6 or higher** for this project. If you do not have Python installed on your local environment, please visit [python.org](https://www.python.org/downloads/) for the latest download instruction. 
+We recommend using **Python 3.6 or higher** for this project. If you do not have Python installed in your local environment, please visit [python.org](https://www.python.org/downloads/) for the latest download instruction. 
 
-Once you have confirmed that Python is installed in your local machine, use the following "pip install" prompts in your command line window to install Numpy, PyTorch, Matplotlib, and Alpha Vantage, respectively. 
+With Python installed, please go to the Command Line interface of your local machine and use the following "pip install" prompts to install Numpy, PyTorch, Matplotlib, and Alpha Vantage, respectively. 
 
 - [NumPy](https://github.com/numpy/numpy) - `pip install numpy`
 - [PyTorch](https://github.com/pytorch/pytorch) - `pip install torch`
