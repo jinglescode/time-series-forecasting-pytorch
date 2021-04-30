@@ -91,7 +91,7 @@ config = {
 }
 ```
 
-Over the course of this project, we will continue adding new code blocks to the **project.py** file. By the time you reach the end of the tutorial, you should have a fully functional LSTM machine learning model to predict stock market price movements. 
+Over the course of this project, we will continue adding new code blocks to the **project.py** file. By the time you reach the end of the tutorial, you should have a fully functional LSTM machine learning model to predict stock market price movements, all in a single Python script. 
 
 
 ## Data preparation: acquiring financial market data from Alpha Vantage
