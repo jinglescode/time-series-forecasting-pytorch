@@ -1,14 +1,27 @@
-# Time Series Forecasting with PyTorch
+# Predicting Stock Prices with Deep Learning
 
-Machine learning is becoming increasingly popular these days. A growing number of the world's population sees it as a magic crystal ball: predicting when and what will happen in the future. This experiment uses artificial neural networks to reveal stock market trends and demonstrates the ability of time series forecasting to predict future stock prices based on past historical data.
+##Project Overview
 
-Disclaimer: As stock market fluctuation is dynamic and unpredictable owing to multiple factors, this experiment is 100% educational and by no means a trading prediction tool.
+**Deep learning** is part of a broader family of machine learning methods based on artificial neural networks, which are [inspired](https://en.wikipedia.org/wiki/Deep_learning) by our brain's own network of neurons. Among the popular deep learning paradigms, [**Long Short-Term Memory (LSTM)**](https://en.wikipedia.org/wiki/Long_short-term_memory) is a specialized archicture that can "memorize" patterns from historical sequences of data and extrapolate such patterns for future events. 
 
-## Data
+Since the stock market is naturally comprised of sequences of prices and volumes, more and more quantitative researchers and finance professional are using LTSM to model and predict stock price movements. In this project, we will go through the end-to-end machine learning workflow of developing an LTSM model to predict stock market prices using PyTorch and Alpha Vantage APIs. 
 
-### Aquire the data - Alpha Vantage
+The project is grouped into the following sections: 
+- Data preparation: acquiring financial market data from Alpha Vantage
+- Data preparation: noramlizing raw data
+- Data preparation: generating training and validation datasets
+- Defining the LSTM model
+- Model training
+- Model evaluation
+- Predicting future stock prices
 
-In this notebook, we will attempt to train a deep learning model to predict IBM's stock price. Before we can train the neural network and make any predictions, we will first require data. We will use a python wrapper developed by [Romel Torres](https://github.com/RomelTorres/alpha_vantage), a python interface to extract financial data provided by [Alpha Vantage](https://www.alphavantage.co/). This API returns a time series dataset, a sequence of numbers in chronological order, of daily volume/high/low and daily adjusted close values, covering 20 years of historical data. At the time of writing this article, we retrieved the past 5407 days, from November 1999 to April 28, 2021. 
+This tutorial has been written in a way such that all the essential code snippets have been embedded inline. You should be able to develop, train, and test your LSTM model without referring to other external pages or documents. 
+
+Let's get started! 
+
+## Data preparation: acquiring financial market data from Alpha Vantage
+
+In this project, we will train an LSTM model to predict stock price movements. Before we can build a crystal ball to predict the future, however, we need historical stock price data to train our deep learning model. To this end, we query the Alpha Vantage stock data API via a [popular python wrapper](https://github.com/RomelTorres/alpha_vantage). For the purpose of this project, we will obtain over 20 years of daily close prices for IBM from November 1999 to April 28, 2021. 
 
 ![historical prices](static/figure01-history-price.png)
 
@@ -16,7 +29,8 @@ In this notebook, we will attempt to train a deep learning model to predict IBM'
 <summary>View codes</summary>
 
 ```python
-from alpha_vantage.timeseries import TimeSeries # pip install alpha_vantage
+# Before proceeding, please make sure to: pip install alpha_vantage
+from alpha_vantage.timeseries import TimeSeries 
 
 def download_data(config):
     ts = TimeSeries(key=config["alpha_vantage"]["key"])
@@ -25,7 +39,7 @@ def download_data(config):
     data_date = [date for date in data.keys()]
     data_date.reverse()
 
-    data_close_price = [float(data[date][config["alpha_vantage"]["key_adjusted_close"]]) for date in data.keys()]
+    data_close_price = [float(data[date][config["alpha_vantage"]["key_adjusted_close"]]) for date in data.keys()] #note that we are using the ADJUSTED close field
     data_close_price.reverse()
     data_close_price = np.array(data_close_price)
 
@@ -39,13 +53,15 @@ data_date, data_close_price, num_data_points, display_date_range = download_data
 ```
 </details>
 
-### Data preparation - Normalization
+Please note that we are using the **adjusted close** field of Alpha Vantage's [daily adjusted API](https://www.alphavantage.co/documentation/#dailyadj) to remove any artificial price turbulances due to stock splits and/or dividend events. It is generally considered an [industry best practice](http://www.crsp.org/products/documentation/crsp-calculations) to use split/dividend adjusted prices instead of raw prices to model stock price movements. 
 
-Machine learning algorithms that use gradient descent as an optimization technique require data to be scaled. This is because the feature's values will affect the step size of the gradient descent; thus, the difference in ranges of features will cause different step sizes for each feature. 
+## Data preparation: normalizing raw data
 
-Normalization reduces the complexity of the problem your network is trying to solve. This can potentially increase the accuracy of your model and help the gradient descent converge more quickly towards the minima. Bringing the data on the same scale and reducing its variance, none of the weights in the network are wasted on doing a normalization, meaning that they can be used more efficiently to learn from the data. Furthermore, LSTMs are also sensitive to the scale of the input data; thus, it is crucial to normalize the data.
+Machine learning algorithms that use [gradient descent](https://en.wikipedia.org/wiki/Gradient_descent) as an optimization technique require data to be scaled. This is due to the fact that the feature values in the model will affect the step size of the gradient descent, potentially skewing the LSTM model in unexpected ways. 
 
-Since stock prices can range from tens to hundreds and thousands, in the case of IBM, from 40 to 160, we need perform normalization on the prices to narrow down the range of the values, scaling the data before feeding it to the model as features. We rescale the data so that it has a mean of 0 and the standard deviation is 1. We need to remember the mean and the standard deviation in order to scale the values for plotting.
+This is where **data normalization** comes in. Normalization can increase the accuracy of your model and help the gradient descent algorithm converge more quickly towards the target minima. By bringing the input data on the same scale and reducing its variance, none of the weights in the articial neural network will be wasted on normalizing tasks, which means the LSTM model can more efficiently learn from the data and store patterns in the network. Furthermore, LSTMs are intrinsically sensitive to the scale of the input data. For the above reasons, it is crucial to normalize the data.
+
+Since stock prices can range from tens to hundreds and thousands (not to mention penny stocks) - $40 to $160 in the case of IBM - we will perform normalization on the stock prices to narrow down the range of these values before feeding the data to the LSTM model. The following code snippets rescales the data so that it has a mean of 0 and the standard deviation is 1. 
 
 <details>
 <summary>View codes</summary>
@@ -70,18 +86,18 @@ normalized_data_close_price = scaler.fit_transform(data_close_price)
 ```
 </details>
 
-### Data preparation - Training and validation datasets
+## Data preparation: generating training and validation datasets
 
-[Supervised learning](https://en.wikipedia.org/wiki/Supervised_learning) is a machine learning method that learns the mapping function from input variables (x) to the output variable (Y). Learning from the training dataset can be thought of as a teacher supervising the learning process, as that teacher knows all the right answers. 
+[Supervised machine learning](https://en.wikipedia.org/wiki/Supervised_learning) methods such as LSTM learns the mapping function from input variables (x) to the output variable (Y). Learning from the training dataset can be thought of as a teacher supervising the learning process, as that teacher knows all the right answers. 
 
-In this experiment, we will train the model to predict the 21<sup>st</sup> day price based on the past 20 days' close prices. The number of days, `20`, was selected based on a few reasons: 
-- as LSTM were a popular choice in natural language processing, the number of words in a sentence range from 15 to 20 words
-- attempting to back-propagate across very long input sequences may result in vanishing gradients
-- a longer sequences will have much longer training times
+In this project, we will train the model to predict the 21<sup>st</sup> day price based on the past 20 days' close prices. The number of days, `20`, was selected based on a few reasons: 
+- When LSTM models are used in natural language processing (NLP), the number of words in a sentence typically ranges from 15 to 20 words
+- Gradient descent considerations: attempting to back-propagate across very long input sequences may result in vanishing gradients
+- Longer sequences tend to have much longer training times
 
-After preparing the dataset into input features and output labels, the shape of our `X` is `(5387, 20)`, 5387 for the number of rows, each row containing a sequence of past 20 days' prices. The corresponding `Y` data shape is ` (5387,)`, which matches the number of rows in `X`.
+After transforming the dataset into input features and output labels, the shape of our `X` is `(5387, 20)`, 5387 for the number of rows, each row containing a sequence of past 20 days' prices. The corresponding `Y` data shape is ` (5387,)`, which matches the number of rows in `X`.
 
-We also split the dataset into two parts, for training and validation. We split the data into 80:20, 80% of the data is used for training, and 20% to verify our model's performance on predicting future prices. One can also split the initial data into train, validation, and test set (70/20/10), where the test dataset is not used at all during the training process. After splitting our `X` and `Y` for training and validation dataset, the size and dimension are as follows:
+We also split the dataset into two parts, for training and validation. We split the data into 80:20 - 80% of the data is used for training, with the remaining 20% to verify our model's performance on predicting future prices. (Alternatively, another common practice is to split the initial data into train, validation, and test set (70/20/10), where the test dataset is not used at all during the training process.) After splitting our `X` and `Y` for training and validation, the size and dimension are as follows:
 
 ![dataset split](static/figure02-train-validation-split.png)
 
@@ -126,7 +142,7 @@ print("data_y_val shape", data_y_val.shape)
 ```
 </details>
 
-We train our models using the [PyTorch](https://pytorch.org/), a machine learning Python library. At the heart of PyTorch's data loading utility is the [`torch.utils.data.DataLoader`](https://pytorch.org/docs/stable/data.html) class, an efficient data generation scheme crucial to leverage the full potential of your GPU during the training process. `DataLoader` requires the [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) object to define the loaded data. `Dataset` is a map-style dataset that implements the `__getitem__()` and `__len__()` protocols, and represents a map from indices to data samples. We will define the `Dataset` object and load it into the `DataLoader`.
+We will train our models using the [PyTorch](https://pytorch.org/), a machine learning library written in Python. At the heart of PyTorch's data loading utility is the [`torch.utils.data.DataLoader`](https://pytorch.org/docs/stable/data.html) class, an efficient data generation scheme that leverages the full potential of your computer's Graphics Processing Unit (GPU) during the training process. `DataLoader` requires the [`Dataset`](https://pytorch.org/docs/stable/data.html#torch.utils.data.Dataset) object to define the loaded data. `Dataset` is a map-style dataset that implements the `__getitem__()` and `__len__()` protocols, and represents a map from indices to data samples. We will define the `Dataset` object and load it into the `DataLoader` as follows: 
 
 <details>
 <summary>View codes</summary>
@@ -154,20 +170,21 @@ val_dataloader = DataLoader(dataset_val, batch_size=config["training"]["batch_si
 ```
 </details>
 
-## Machine learning
 
-### Defining the model
+## Defining the LSTM model
 
-[Long Short-Term Memory](https://en.wikipedia.org/wiki/Long_short-term_memory) (LSTM) networks are a type of [recurrent neural network](https://en.wikipedia.org/wiki/Recurrent_neural_network) (RNN) capable of learning and predicting sequential datasets, such as natural language processing and speech recognition.
+With the training and evaluation data now fully normalized and prepared, we are ready to build our first LSTM model! 
 
-LSTM is a popular neural network because it manages to overcome technical problems in RNNs. RNNs fail to learn when the data sequence is greater than 5 to 10 due to the [vanishing gradients problem](https://en.wikipedia.org/wiki/Vanishing_gradient_problem), where the gradients are vanishingly small, effectively preventing the model to learn. LSTMs can learn long sequences by enforcing constant error flow through self-connected hidden layers which contains memory cells and corresponding gate units.
+As mentioned before, LSTM is a specialized artificial neural network archicture that can "memorize" patterns from historical sequences of data and extrapolate such patterns for future events. Specifically, it belongs to a group of artifical neural networks called [Recurring Neural Networks (RNNs)](https://en.wikipedia.org/wiki/Recurrent_neural_network). 
 
-The network defined has three main layers; each layer was designed with a logical intention:
+LSTM is a popular artificial neural network because it manages to overcome many technical limitations of RNNs. For example, RNNs fail to learn when the data sequence is greater than 5 to 10 due to the [vanishing gradients problem](https://en.wikipedia.org/wiki/Vanishing_gradient_problem), where the gradients are vanishingly small, effectively preventing the model to learn. LSTMs can learn long sequences by enforcing constant error flow through self-connected hidden layers which contains memory cells and corresponding gate units. If you are interested in learning more about the inner workings of LSTM and RNNs, [this](https://colah.github.io/posts/2015-08-Understanding-LSTMs/) is a great explainer for your reference. 
+
+The artificial neural network defined has three main layers, with each layer designed with a specific logical purpose:
 - linear layer 1 (`linear_1`): to map input values into a high dimensional feature space, transforming the features for the LSTM layer
 - LSTM (`lstm`): to learn the data in sequence
 - linear layer 2 (`linear_2`): to produce the predicted value based on LSTM's output
 
-We added [Dropout](https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html) which randomly zeroes some of the elements of the input tensor, regularizing network preventing overfitting, improving overall validation performance. We also initialized the LSTM's weights, as some say it could help the model learn better, though it could be optional. 
+We added [Dropout](https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html), which randomly zeroes some of the elements of the input data, therefore regularizing the network to prevent [overfitting](https://en.wikipedia.org/wiki/Overfitting) and improving overall model performance. As an optional step, we also initialize the LSTM's model weights, as some researchers have observed that it could help the model learn better. 
 
 <details>
 <summary>View codes</summary>
@@ -218,9 +235,9 @@ class LSTMModel(nn.Module):
 ```
 </details>
 
-### Training
+## Model training
 
-With supervised learning, the network learns by iteratively making predictions given the training data `X`. We use [mean squared error](https://en.wikipedia.org/wiki/Mean_squared_error) as the cost function, which measures the difference between the predicted values and the actual values. When the model is making bad predictions, the error rate will be high. The model will fine-tune its weights through [backpropagation](https://en.wikipedia.org/wiki/Backpropagation), improving its ability to make better predictions. Learning stops when the algorithm achieves an acceptable level of performance, where the cost function on the validation dataset is not showing improvements. 
+The LSTM model learns by iteratively making predictions given the training data `X`. We use [mean squared error](https://en.wikipedia.org/wiki/Mean_squared_error) as the cost function, which measures the difference between the predicted values and the actual values. When the model is making bad predictions, the error rate will be high. The model will fine-tune its weights through [backpropagation](https://en.wikipedia.org/wiki/Backpropagation), improving its ability to make better predictions. Learning stops when the algorithm achieves an acceptable level of performance, where the cost function on the validation dataset is no longer showing incremental improvements. 
 
 We used the [Adam optimizer](https://pytorch.org/docs/master/generated/torch.optim.Adam.html) [[paper](https://arxiv.org/abs/1412.6980)] that updates the model's parameters based on the learning rate through its `step()` method. This is how the model learns and fine-tunes its predictions. The learning rate controls how quickly the model converges. A learning rate that is too large can cause the model to converge too quickly to a suboptimal solution, whereas smaller learning rates require more training epochs given the smaller changes made to the weights each update. We also used the [StepLR scheduler](https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.StepLR.html) to reduce the learning rate during the training process. One could change to using [ReduceLROnPlateau](https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html) scheduler, which reduces the learning rate when a cost function has stopped improving for a "`patience`" number of epochs.
 
@@ -384,27 +401,29 @@ Epoch[100/100] | loss train:0.005894, test:0.000996 | lr:0.000100
 ```
 </details>
 
-### Display training and validation predictions
+## Model evaluation
 
-To visually inspect our model's performance, we used the trained model to make predictions with the training and validation dataset. If we see that the model can predict values that closely mirror the training dataset, it shows that the model managed to memorize the data. And if the model can predict values that resemble the validation dataset, it has managed to learn the pattern of our sequential data and predict unseen data points. If you have split the data into train, validation, and test set, plotting and comparing against the test set will give you a good indicator on the model's performance.
+To visually inspect our model's performance, we use the trained model to make predictions with the training and validation dataset. If we see that the model can predict values that closely mirror the training dataset, it shows that the model managed to memorize the data. And if the model can predict values that resemble the validation dataset, it has managed to learn the pattern of our sequential data and predict unseen data points. If you have split the data into train, validation, and test set, plotting and comparing against the test set will give you a good indicator on the model's performance.
 
 ![actual vs predicted](static/figure03-actual-vs-predicted.png)
 
-From our results, the model manages to learn and predict on both training and validation datasets very well, as the `Predicted Train` and `Predicted Validation` lines covered the `Actual` values. 
+From our results, the model manages to learn and predict on both training and validation datasets very well, as the `Predicted Train` and `Predicted Validation` lines significantly overlap with the `Actual` values. 
 
 Let's zoom into the chart and look closely at `Predicted Validation`, comparing against `Actual` values.
 
 ![predicted validation zoom in](static/figure04-actual-vs-predicted-zoom.png)
 
-Not bad, not bad at all! 
+What a beautiful graph! 
 
-### Predicting tomorrow
+It is also worth noting that model training & evaluation is an iterative process. Please feel free to go back to the "model training" step to fine-tune the model and re-evaluate the model to see if there is further performance boost. 
 
-We have trained the model to predict the next day's price based on the past 20 days' close prices; we can use the latest 20 days and predict tomorrow's price. Let's throw the past 20 days' prices into the model and...
+## Predicting future stock prices
+
+By now, we have trained an LSTM model that can (fairly accurately) predict the next day's price based on the past 20 days' close prices. This means we now have a crystall ball in hand! At the time of writing this tutorial, tomorrow is April 29, 2021. Let's supply the past 20 days' close prices to the model and...
 
 ![predicted tomorrow price](static/figure05-predict-the-unseen.png)
 
-IBM's close price on April 29, 2021: $143.01 🤫
+The model predicts that IBM's close price on April 29, 2021 is $143.01 per share. Is the prediction good enough? How about other stocks such as TSLA, APPL, or the hugely popular Gamestop stock GME? Beyond the close prices, are there any other external data we can feed to the LSTM model to make it even more robust? We will now pass the baton to you, our fearless reader! 
 
 <details>
 <summary>View codes</summary>
@@ -421,3 +440,5 @@ prediction = prediction.detach().numpy()
 print("Tomorrow's price:", round(to_plot_data_y_test_pred[plot_range-1], 2))
 ```
 </details>
+
+_Disclaimer: this content is for educational purposes only and does NOT constitute investment advice. _
