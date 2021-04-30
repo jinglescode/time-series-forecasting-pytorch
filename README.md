@@ -7,6 +7,7 @@
 Since the stock market is naturally comprised of sequences of prices and volumes, more and more quantitative researchers and finance professionals are using LTSM to model and predict stock price movements. In this project, we will go through the end-to-end machine learning workflow of developing an LTSM model to predict stock market prices using PyTorch and Alpha Vantage APIs. 
 
 The project is grouped into the following sections: 
+- Installing Python libraries
 - Data preparation: acquiring financial market data from Alpha Vantage
 - Data preparation: normalizing raw data
 - Data preparation: generating training and validation datasets
@@ -18,6 +19,80 @@ The project is grouped into the following sections:
 This tutorial has been written in a way such that all the essential code snippets have been embedded inline. You should be able to develop, train, and test your machine learning model without referring to other external pages or documents. 
 
 Let's get started! 
+
+## Installing Python libraries
+We recommend using **Python 3.6 or higher** for this project. If you do not have Python installed on your local environment, please visit [python.org](https://www.python.org/downloads/) for the latest download instruction. 
+
+Once you have confirmed that Python is installed in your local machine, use the following "pip install" prompts in your command line window to install Numpy, PyTorch, Matplotlib, and Alpha Vantage, respectively. 
+
+- [NumPy](https://github.com/numpy/numpy) - `pip install numpy`
+- [PyTorch](https://github.com/pytorch/pytorch) - `pip install torch`
+- [Matplotlib](https://github.com/matplotlib/matplotlib) - `pip install matplotlib`
+- [alpha_vantage](https://github.com/RomelTorres/alpha_vantage) - `pip install alpha_vantage`
+
+Now, create a new .py file named **project.py** and paste the following code into the file: 
+
+```
+import numpy as np
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
+
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import figure
+
+from alpha_vantage.timeseries import TimeSeries 
+
+print("All libraries loaded")
+```
+
+If your have succesfully installed all the 4 libraries above, you should see the text "All libraries loaded" after running the project.py file. 
+
+In the same **project.py** file, append the following code to the existing code blocks. Don't forget to replace "YOUR_API_KEY" with your actual Alpha Vantage API key, which can be obtained from the [support page](https://www.alphavantage.co/support/#api-key). 
+
+```
+config = {
+    "alpha_vantage": {
+        "key": "YOUR_API_KEY", # Claim your free API key here: https://www.alphavantage.co/support/#api-key
+        "symbol": "IBM",
+        "outputsize": "full",
+        "key_adjusted_close": "5. adjusted close",
+    },
+    "data": {
+        "window_size": 20,
+        "train_split_size": 0.80,
+    }, 
+    "plots": {
+        "xticks_interval": 90,
+        "color_actual": "#001f3f",
+        "color_train": "#3D9970",
+        "color_val": "#0074D9",
+        "color_pred_train": "#3D9970",
+        "color_pred_val": "#0074D9",
+        "color_pred_test": "#FF4136",
+    },
+    "model": {
+        "input_size": 1, # since we are only using 1 feature, close price
+        "num_lstm_layers": 2,
+        "lstm_size": 32,
+        "dropout": 0.2,
+    },
+    "training": {
+        "device": "cpu", # "cuda" or "cpu"
+        "batch_size": 64,
+        "num_epoch": 100,
+        "learning_rate": 0.01,
+        "scheduler_step_size": 40,
+    }
+}
+```
+
+Over the course of this project, we will continue adding new code blocks to the **project.py** file. By the time you reach the end of the tutorial, you should have a fully functional LSTM machine learning model to predict stock market price movements. 
+
 
 ## Data preparation: acquiring financial market data from Alpha Vantage
 
@@ -412,7 +487,9 @@ By now, we have trained an LSTM model that can (fairly accurately) predict the n
 
 ![predicted tomorrow price](static/figure05-predict-the-unseen.png)
 
-The model predicts that IBM's close price on April 30, 2021 is $144.23 per share. Is the prediction good enough? How about other stocks such as TSLA, APPL, or the hugely popular Gamestop stock GME? Beyond the close prices, are there any other external data we can feed to the LSTM model to make it even more robust? We will now pass the baton to you, our fearless reader! 
+The model predicts that IBM's close price on April 30, 2021 is $144.23 per share. Is the prediction good enough? How about other stocks such as TSLA, APPL, or the hugely popular Gamestop stock GME? What about other asset classes such as [forex](https://www.alphavantage.co/documentation/#fx) or [cryptocurrencies](https://www.alphavantage.co/documentation/#digital-currency)? Beyond the close prices, are there any other external data we can feed to the LSTM model to make it even more robust - for example, one of the [50+ technical indicators](https://www.alphavantage.co/documentation/#technical-indicators) from the Alpha Vantage APIs? 
+
+We will now pass the baton to you, our fearless reader! 
 
 <details>
 <summary>View codes</summary>
@@ -432,15 +509,13 @@ print("Tomorrow's price:", round(to_plot_data_y_test_pred[plot_range-1], 2))
 
 **Disclaimer**: This content is for educational purposes only and is NOT investment advice. 
 
-# Getting Started
+## Other ways to run the code: 
 
-## Running the codes on Google Colab
+### Running the codes on Google Colab
 
 Colab is a free hosted Jupyter notebook with access to GPU, you can examine and run the code [here](https://colab.research.google.com/github/jinglescode/time-series-forecasting-pytorch/blob/main/demo-predicting-stock-prices.ipynb).
 
-## Running the codes locally
-
-If you plan to run the codes from your machines, you can get the files by doing a `git clone` using the command line:
+### Running the codes on your local Jupyter Notebook: 
 
 ```
 git clone https://github.com/jinglescode/time-series-forecasting-pytorch.git
@@ -451,9 +526,3 @@ Then, you can install all the packages used in this project with:
 pip install -r requirements.txt
 ```
 
-Alternatively, you can install the following dependencies individually:
-
-- [NumPy](https://github.com/numpy/numpy) - `pip install numpy`
-- [PyTorch](https://github.com/pytorch/pytorch) - `pip install torch`
-- [NumPy](https://github.com/matplotlib/matplotlib) - `pip install matplotlib`
-- [alpha_vantage](https://github.com/RomelTorres/alpha_vantage) - `pip install alpha_vantage`
