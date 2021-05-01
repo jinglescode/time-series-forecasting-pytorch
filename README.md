@@ -196,6 +196,21 @@ Append the following code block to your **project.py** file. If you re-run the f
 <summary>View codes</summary>
 
 ```python
+def prepare_data_x(x, window_size):
+    # perform windowing
+    n_row = x.shape[0] - window_size + 1
+    output = np.lib.stride_tricks.as_strided(x, shape=(n_row, window_size), strides=(x.strides[0], x.strides[0]))
+    return output[:-1], output[-1]
+
+
+def prepare_data_y(x, window_size):
+    # # perform simple moving average
+    # output = np.convolve(x, np.ones(window_size), 'valid') / window_size
+
+    # use the next day as label
+    output = x[window_size:]
+    return output
+
 data_x, data_x_unseen = prepare_data_x(normalized_data_close_price, window_size=config["data"]["window_size"])
 data_y = prepare_data_y(normalized_data_close_price, window_size=config["data"]["window_size"])
 
