@@ -106,8 +106,6 @@ Append the following code block to your **project.py** file. If you re-run the f
 <summary>View codes</summary>
 
 ```python
-# Before proceeding, please make sure to: pip install alpha_vantage
-
 def download_data(config):
     ts = TimeSeries(key=config["alpha_vantage"]["key"])
     data, meta_data = ts.get_daily_adjusted(config["alpha_vantage"]["symbol"], outputsize=config["alpha_vantage"]["outputsize"])
