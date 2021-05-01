@@ -589,7 +589,7 @@ Append the following code block to your **project.py** file and re-run the scrip
 <summary>View codes</summary>
 
 ```python
-# prepare data for plotting
+# prepare data for plotting the zoomed in view of the predicted prices (on validation set) vs. actual prices
 
 to_plot_data_y_val_subset = scaler.inverse_transform(data_y_val)
 to_plot_predicted_val = scaler.inverse_transform(predicted_val)
@@ -625,7 +625,7 @@ By now, we have trained an LSTM model that can (fairly accurately) predict the n
 <summary>View codes</summary>
 
 ```python
-# predict on the unseen data, tomorrow's price 
+# predict the closing price of the next trading day
 
 model.eval()
 
@@ -659,12 +659,12 @@ fig.patch.set_facecolor((1.0, 1.0, 1.0))
 plt.plot(plot_date_test, to_plot_data_y_val, label="Actual prices", marker=".", markersize=10, color=config["plots"]["color_actual"])
 plt.plot(plot_date_test, to_plot_data_y_val_pred, label="Past predicted prices", marker=".", markersize=10, color=config["plots"]["color_pred_val"])
 plt.plot(plot_date_test, to_plot_data_y_test_pred, label="Predicted price for next day", marker=".", markersize=20, color=config["plots"]["color_pred_test"])
-plt.title("Predicting tomorrow's close price")
+plt.title("Predicted close price of the next trading day")
 plt.grid(b=None, which='major', axis='y', linestyle='--')
 plt.legend()
 plt.show()
 
-print("Tomorrow's price:", round(to_plot_data_y_test_pred[plot_range-1], 2))
+print("Predicted close price of the next trading day:", round(to_plot_data_y_test_pred[plot_range-1], 2))
 ```
 </details>
 
