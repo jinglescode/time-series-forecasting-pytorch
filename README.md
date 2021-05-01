@@ -6,7 +6,7 @@
 
 Since the financial market is naturally comprised of historical sequences of equity prices, more and more quantitative researchers and finance professionals are using LTSM to model and predict market price movements. In this project, we will go through the end-to-end machine learning workflow of developing an LTSM model to predict stock market prices using PyTorch and Alpha Vantage APIs. 
 
-The project is grouped into the following sections: 
+The project is grouped into the following sections, which are representative of a typical [machine learning workflow](https://cloud.google.com/ai-platform/docs/ml-solutions-overview): 
 - Installing Python dependencies
 - Data preparation: acquiring financial market data from Alpha Vantage
 - Data preparation: normalizing raw data
