@@ -21,6 +21,7 @@ This tutorial has been written in a way such that all the essential code snippet
 Let's get started! 
 
 ## Installing Python libraries
+
 We recommend using **Python 3.6 or higher** for this project. If you do not have Python installed in your local environment, please visit [python.org](https://www.python.org/downloads/) for the latest download instruction. 
 
 With Python installed, please go to the Command Line interface of your local machine and use the following "pip install" prompts to install Numpy, PyTorch, Matplotlib, and Alpha Vantage, respectively. 
@@ -30,9 +31,9 @@ With Python installed, please go to the Command Line interface of your local mac
 - [Matplotlib](https://github.com/matplotlib/matplotlib) - `pip install matplotlib`
 - [alpha_vantage](https://github.com/RomelTorres/alpha_vantage) - `pip install alpha_vantage`
 
-Now, create a new .py file named **project.py** and paste the following code into the file: 
+Now, create a new `.py` file named **project.py** and paste the following code into the file: 
 
-```
+```python
 import numpy as np
 
 import torch
@@ -54,7 +55,7 @@ If your have succesfully installed all the 4 libraries above, you should see the
 
 In the same **project.py** file, add the following code below the existing code blocks. Don't forget to replace "YOUR_API_KEY" with your actual Alpha Vantage API key, which can be obtained from the [support page](https://www.alphavantage.co/support/#api-key). 
 
-```
+```python
 config = {
     "alpha_vantage": {
         "key": "YOUR_API_KEY", # Claim your free API key here: https://www.alphavantage.co/support/#api-key
@@ -67,7 +68,7 @@ config = {
         "train_split_size": 0.80,
     }, 
     "plots": {
-        "xticks_interval": 90,
+        "xticks_interval": 90, # show a date every 90 days
         "color_actual": "#001f3f",
         "color_train": "#3D9970",
         "color_val": "#0074D9",
@@ -91,8 +92,7 @@ config = {
 }
 ```
 
-Over the course of this project, we will continue adding new code blocks to the **project.py** file. By the time you reach the end of the tutorial, you should have a fully functional LSTM machine learning model to predict stock market price movements, all in a single Python script. 
-
+Over the course of this project, we will continue adding new code blocks to the **project.py** file. By the time you reach the end of the tutorial, you should have a fully functional LSTM machine learning model to predict stock market price movements, all in a single Python script. You can also find the [end-to-end code here](https://github.com/jinglescode/time-series-forecasting-pytorch/blob/main/main.py).
 
 ## Data preparation: acquiring financial market data from Alpha Vantage
 
@@ -105,7 +105,6 @@ In this project, we will train an LSTM model to predict stock price movements. B
 
 ```python
 # Before proceeding, please make sure to: pip install alpha_vantage
-from alpha_vantage.timeseries import TimeSeries 
 
 def download_data(config):
     ts = TimeSeries(key=config["alpha_vantage"]["key"])
@@ -114,7 +113,7 @@ def download_data(config):
     data_date = [date for date in data.keys()]
     data_date.reverse()
 
-    data_close_price = [float(data[date][config["alpha_vantage"]["key_adjusted_close"]]) for date in data.keys()] #note that we are using the ADJUSTED close field
+    data_close_price = [float(data[date][config["alpha_vantage"]["key_adjusted_close"]]) for date in data.keys()]
     data_close_price.reverse()
     data_close_price = np.array(data_close_price)
 
@@ -125,6 +124,18 @@ def download_data(config):
     return data_date, data_close_price, num_data_points, display_date_range
 
 data_date, data_close_price, num_data_points, display_date_range = download_data(config)
+
+# plot
+
+fig = figure(figsize=(25, 5), dpi=80)
+fig.patch.set_facecolor((1.0, 1.0, 1.0))
+plt.plot(data_date, data_close_price, color=config["plots"]["color_actual"])
+xticks = [data_date[i] if ((i%config["plots"]["xticks_interval"]==0 and (num_data_points-i) > config["plots"]["xticks_interval"]) or i==num_data_points-1) else None for i in range(num_data_points)] # make x ticks nice
+x = np.arange(0,len(xticks))
+plt.xticks(x, xticks, rotation='vertical')
+plt.title("Daily close price for " + config["alpha_vantage"]["symbol"] + ", " + display_date_range)
+plt.grid(b=None, which='major', axis='y', linestyle='--')
+plt.show()
 ```
 </details>
 
@@ -156,6 +167,7 @@ class Normalizer():
     def inverse_transform(self, x):
         return (x*self.sd) + self.mu
 
+# normalize
 scaler = Normalizer()
 normalized_data_close_price = scaler.fit_transform(data_close_price)
 ```
@@ -180,33 +192,41 @@ We also split the dataset into two parts, for training and validation. We split 
 <summary>View codes</summary>
 
 ```python
-def prepare_data_x(x, window_size):
-    # perform windowing
-    n_row = x.shape[0] - window_size + 1
-    output = np.lib.stride_tricks.as_strided(x, shape=(n_row,window_size), strides=(x.strides[0],x.strides[0]))
-    return output[:-1], output[-1]
-
-def prepare_data_y(x, window_size):
-    # # perform simple moving average
-    # output = np.convolve(x, np.ones(window_size), 'valid') / window_size
-    output = x[window_size:]
-    return output
-
 data_x, data_x_unseen = prepare_data_x(normalized_data_close_price, window_size=config["data"]["window_size"])
-
 data_y = prepare_data_y(normalized_data_close_price, window_size=config["data"]["window_size"])
 
 # split dataset
+
 split_index = int(data_y.shape[0]*config["data"]["train_split_size"])
 data_x_train = data_x[:split_index]
 data_x_val = data_x[split_index:]
 data_y_train = data_y[:split_index]
 data_y_val = data_y[split_index:]
 
-print("data_x_train shape", data_x_train.shape)
-print("data_y_train shape", data_y_train.shape)
-print("data_x_val shape", data_x_val.shape)
-print("data_y_val shape", data_y_val.shape)
+# prepare data for plotting
+
+to_plot_data_y_train = np.zeros(num_data_points)
+to_plot_data_y_val = np.zeros(num_data_points)
+
+to_plot_data_y_train[config["data"]["window_size"]:split_index+config["data"]["window_size"]] = scaler.inverse_transform(data_y_train)
+to_plot_data_y_val[split_index+config["data"]["window_size"]:] = scaler.inverse_transform(data_y_val)
+
+to_plot_data_y_train = np.where(to_plot_data_y_train == 0, None, to_plot_data_y_train)
+to_plot_data_y_val = np.where(to_plot_data_y_val == 0, None, to_plot_data_y_val)
+
+## plots
+
+fig = figure(figsize=(25, 5), dpi=80)
+fig.patch.set_facecolor((1.0, 1.0, 1.0))
+plt.plot(data_date, to_plot_data_y_train, label="Prices (train)", color=config["plots"]["color_train"])
+plt.plot(data_date, to_plot_data_y_val, label="Prices (validation)", color=config["plots"]["color_val"])
+xticks = [data_date[i] if ((i%config["plots"]["xticks_interval"]==0 and (num_data_points-i) > config["plots"]["xticks_interval"]) or i==num_data_points-1) else None for i in range(num_data_points)] # make x ticks nice
+x = np.arange(0,len(xticks))
+plt.xticks(x, xticks, rotation='vertical')
+plt.title("Daily close prices for " + config["alpha_vantage"]["symbol"] + " - showing training and validation data")
+plt.grid(b=None, which='major', axis='y', linestyle='--')
+plt.legend()
+plt.show()
 ```
 </details>
 
@@ -469,6 +489,8 @@ Epoch[100/100] | loss train:0.006102, test:0.000972 | lr:0.000100
 
 To visually inspect our model's performance, we use the trained model to make predictions with the training and validation dataset. If we see that the model can predict values that closely mirror the *training* dataset, it shows that the model managed to memorize the data. And if the model can predict values that resemble the *validation* dataset, it has managed to learn the pattern of our sequential data and predict unseen data points. If you have split the data into train, validation, and test set, plotting and comparing against the test set will give you a good indicator of the model's performance.
 
+![actual vs predicted](static/figure03-actual-vs-predicted.png)
+
 <details>
 <summary>View codes</summary>
 
@@ -528,11 +550,11 @@ plt.show()
 ```
 </details>
 
-![actual vs predicted](static/figure03-actual-vs-predicted.png)
-
 From our results, the model manages to learn and predict on both training and validation datasets very well, as the `Predicted prices` lines significantly overlap with the `Actual prices` values. 
 
 Let's zoom into the chart and look closely at `Predicted price (validation)`, comparing against its actual prices values.
+
+![predicted validation zoom in](static/figure04-actual-vs-predicted-zoom.png)
 
 <details>
 <summary>View codes</summary>
@@ -560,8 +582,6 @@ plt.show()
 ```
 </details>
 
-![predicted validation zoom in](static/figure04-actual-vs-predicted-zoom.png)
-
 What a beautiful graph! 
 
 It is also worth noting that model training & evaluation is an iterative process. Please feel free to go back to the "model training" step to fine-tune the model and re-evaluate the model to see if there is a further performance boost. 
@@ -572,10 +592,6 @@ By now, we have trained an LSTM model that can (fairly accurately) predict the n
 
 ![predicted tomorrow price](static/figure05-predict-the-unseen.png)
 
-The model predicts that IBM's close price on April 30, 2021 is $144.23 per share. Is the prediction good enough? How about other stocks such as TSLA, APPL, or the hugely popular Gamestop stock GME? What about other asset classes such as [forex](https://www.alphavantage.co/documentation/#fx) or [cryptocurrencies](https://www.alphavantage.co/documentation/#digital-currency)? Beyond the close prices, are there any other external data we can feed to the LSTM model to make it even more robust - for example, one of the [50+ technical indicators](https://www.alphavantage.co/documentation/#technical-indicators) from the Alpha Vantage APIs? 
-
-We will now pass the baton to you, our fearless reader! 
-
 <details>
 <summary>View codes</summary>
 
@@ -584,13 +600,48 @@ We will now pass the baton to you, our fearless reader!
 
 model.eval()
 
-x = torch.tensor(data_x_unseen).float().to(config["training"]["device"]).unsqueeze(0) # this is the data type and shape required
+x = torch.tensor(data_x_unseen).float().to(config["training"]["device"]).unsqueeze(0).unsqueeze(2) # this is the data type and shape required, [batch, sequence, feature]
 prediction = model(x)
-prediction = prediction.detach().numpy()
+prediction = prediction.cpu().detach().numpy()
+
+# prepare plots
+
+plot_range = 10
+to_plot_data_y_val = np.zeros(plot_range)
+to_plot_data_y_val_pred = np.zeros(plot_range)
+to_plot_data_y_test_pred = np.zeros(plot_range)
+
+to_plot_data_y_val[:plot_range-1] = scaler.inverse_transform(data_y_val)[-plot_range+1:]
+to_plot_data_y_val_pred[:plot_range-1] = scaler.inverse_transform(predicted_val)[-plot_range+1:]
+
+to_plot_data_y_test_pred[plot_range-1] = scaler.inverse_transform(prediction)
+
+to_plot_data_y_val = np.where(to_plot_data_y_val == 0, None, to_plot_data_y_val)
+to_plot_data_y_val_pred = np.where(to_plot_data_y_val_pred == 0, None, to_plot_data_y_val_pred)
+to_plot_data_y_test_pred = np.where(to_plot_data_y_test_pred == 0, None, to_plot_data_y_test_pred)
+
+# plot
+
+plot_date_test = data_date[-plot_range+1:]
+plot_date_test.append("tomorrow")
+
+fig = figure(figsize=(25, 5), dpi=80)
+fig.patch.set_facecolor((1.0, 1.0, 1.0))
+plt.plot(plot_date_test, to_plot_data_y_val, label="Actual prices", marker=".", markersize=10, color=config["plots"]["color_actual"])
+plt.plot(plot_date_test, to_plot_data_y_val_pred, label="Past predicted prices", marker=".", markersize=10, color=config["plots"]["color_pred_val"])
+plt.plot(plot_date_test, to_plot_data_y_test_pred, label="Predicted price for next day", marker=".", markersize=20, color=config["plots"]["color_pred_test"])
+plt.title("Predicting tomorrow's close price")
+plt.grid(b=None, which='major', axis='y', linestyle='--')
+plt.legend()
+plt.show()
 
 print("Tomorrow's price:", round(to_plot_data_y_test_pred[plot_range-1], 2))
 ```
 </details>
+
+The model predicts that IBM's close price on April 30, 2021 is $144.23 per share. Is the prediction good enough? How about other stocks such as TSLA, APPL, or the hugely popular Gamestop stock GME? What about other asset classes such as [forex](https://www.alphavantage.co/documentation/#fx) or [cryptocurrencies](https://www.alphavantage.co/documentation/#digital-currency)? Beyond the close prices, are there any other external data we can feed to the LSTM model to make it even more robust - for example, one of the [50+ technical indicators](https://www.alphavantage.co/documentation/#technical-indicators) from the Alpha Vantage APIs? 
+
+We will now pass the baton to you, our fearless reader! 
 
 **Disclaimer**: This content is for educational purposes only and is NOT investment advice. 
 
@@ -600,8 +651,9 @@ print("Tomorrow's price:", round(to_plot_data_y_test_pred[plot_range-1], 2))
 
 Colab is a free hosted Jupyter notebook with access to GPU, you can examine and run the code [here](https://colab.research.google.com/github/jinglescode/time-series-forecasting-pytorch/blob/main/demo-predicting-stock-prices.ipynb).
 
-### Running the codes on your local Jupyter Notebook: 
+### Running the codes on your local Jupyter Notebook
 
+Download the files with:
 ```
 git clone https://github.com/jinglescode/time-series-forecasting-pytorch.git
 ```
