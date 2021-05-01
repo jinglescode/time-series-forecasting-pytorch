@@ -31,7 +31,7 @@ With Python installed, please go to the Command Line interface of your local mac
 - [Matplotlib](https://github.com/matplotlib/matplotlib) - `pip install matplotlib`
 - [alpha_vantage](https://github.com/RomelTorres/alpha_vantage) - `pip install alpha_vantage`
 
-Now, create a new `.py` file named **project.py** and paste the following code into the file: 
+Now, create a new file named `project.py` and paste the following code into the file: 
 
 ```python
 import numpy as np
@@ -92,7 +92,7 @@ config = {
 }
 ```
 
-Over the course of this project, we will continue adding new code blocks to the **project.py** file. By the time you reach the end of the tutorial, you should have a fully functional LSTM machine learning model to predict stock market price movements, all in a single Python script. You can also find the [end-to-end code here](https://github.com/jinglescode/time-series-forecasting-pytorch/blob/main/main.py).
+Over the course of this project, we will continue adding new code blocks to the **project.py** file. By the time you reach the end of the tutorial, you should have a fully functional LSTM machine learning model to predict stock market price movements, all in a single Python script. You can also download the end-to-end code for [project.py](https://github.com/jinglescode/time-series-forecasting-pytorch/blob/main/project.py).
 
 ## Data preparation: acquiring financial market data from Alpha Vantage
 
