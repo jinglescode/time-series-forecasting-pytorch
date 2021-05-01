@@ -53,7 +53,7 @@ print("All libraries loaded")
 
 If your have succesfully installed all the Python dependencies above, you should see the text "All libraries loaded" after running the project.py file. 
 
-Now add the following code to the **project.py** file. Don't forget to replace "YOUR_API_KEY" with your actual Alpha Vantage API key, which can be obtained from the [support page](https://www.alphavantage.co/support/#api-key). 
+Now append the following code to the **project.py** file. Don't forget to replace "YOUR_API_KEY" with your actual Alpha Vantage API key, which can be obtained from the [support page](https://www.alphavantage.co/support/#api-key). 
 
 ```python
 config = {
