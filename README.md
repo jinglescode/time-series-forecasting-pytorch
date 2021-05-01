@@ -7,6 +7,7 @@
 Since the stock market is naturally comprised of sequences of prices and volumes, more and more quantitative researchers and finance professionals are using LTSM to model and predict stock price movements. In this project, we will go through the end-to-end machine learning workflow of developing an LTSM model to predict stock market prices using PyTorch and Alpha Vantage APIs. 
 
 The project is grouped into the following sections: 
+- Installing Python libraries
 - Data preparation: acquiring financial market data from Alpha Vantage
 - Data preparation: normalizing raw data
 - Data preparation: generating training and validation datasets
@@ -18,6 +19,80 @@ The project is grouped into the following sections:
 This tutorial has been written in a way such that all the essential code snippets have been embedded inline. You should be able to develop, train, and test your machine learning model without referring to other external pages or documents. 
 
 Let's get started! 
+
+## Installing Python libraries
+We recommend using **Python 3.6 or higher** for this project. If you do not have Python installed in your local environment, please visit [python.org](https://www.python.org/downloads/) for the latest download instruction. 
+
+With Python installed, please go to the Command Line interface of your local machine and use the following "pip install" prompts to install Numpy, PyTorch, Matplotlib, and Alpha Vantage, respectively. 
+
+- [NumPy](https://github.com/numpy/numpy) - `pip install numpy`
+- [PyTorch](https://github.com/pytorch/pytorch) - `pip install torch`
+- [Matplotlib](https://github.com/matplotlib/matplotlib) - `pip install matplotlib`
+- [alpha_vantage](https://github.com/RomelTorres/alpha_vantage) - `pip install alpha_vantage`
+
+Now, create a new .py file named **project.py** and paste the following code into the file: 
+
+```
+import numpy as np
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
+
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import figure
+
+from alpha_vantage.timeseries import TimeSeries 
+
+print("All libraries loaded")
+```
+
+If your have succesfully installed all the 4 libraries above, you should see the text "All libraries loaded" after running the project.py file. 
+
+In the same **project.py** file, add the following code below the existing code blocks. Don't forget to replace "YOUR_API_KEY" with your actual Alpha Vantage API key, which can be obtained from the [support page](https://www.alphavantage.co/support/#api-key). 
+
+```
+config = {
+    "alpha_vantage": {
+        "key": "YOUR_API_KEY", # Claim your free API key here: https://www.alphavantage.co/support/#api-key
+        "symbol": "IBM",
+        "outputsize": "full",
+        "key_adjusted_close": "5. adjusted close",
+    },
+    "data": {
+        "window_size": 20,
+        "train_split_size": 0.80,
+    }, 
+    "plots": {
+        "xticks_interval": 90,
+        "color_actual": "#001f3f",
+        "color_train": "#3D9970",
+        "color_val": "#0074D9",
+        "color_pred_train": "#3D9970",
+        "color_pred_val": "#0074D9",
+        "color_pred_test": "#FF4136",
+    },
+    "model": {
+        "input_size": 1, # since we are only using 1 feature, close price
+        "num_lstm_layers": 2,
+        "lstm_size": 32,
+        "dropout": 0.2,
+    },
+    "training": {
+        "device": "cpu", # "cuda" or "cpu"
+        "batch_size": 64,
+        "num_epoch": 100,
+        "learning_rate": 0.01,
+        "scheduler_step_size": 40,
+    }
+}
+```
+
+Over the course of this project, we will continue adding new code blocks to the **project.py** file. By the time you reach the end of the tutorial, you should have a fully functional LSTM machine learning model to predict stock market price movements, all in a single Python script. 
+
 
 ## Data preparation: acquiring financial market data from Alpha Vantage
 
@@ -394,11 +469,96 @@ Epoch[100/100] | loss train:0.006102, test:0.000972 | lr:0.000100
 
 To visually inspect our model's performance, we use the trained model to make predictions with the training and validation dataset. If we see that the model can predict values that closely mirror the *training* dataset, it shows that the model managed to memorize the data. And if the model can predict values that resemble the *validation* dataset, it has managed to learn the pattern of our sequential data and predict unseen data points. If you have split the data into train, validation, and test set, plotting and comparing against the test set will give you a good indicator of the model's performance.
 
+<details>
+<summary>View codes</summary>
+
+```python
+# here I re-initialize dataloader so the data doesn't shuffled, so we can plot the values by date
+
+train_dataloader = DataLoader(dataset_train, batch_size=config["training"]["batch_size"], shuffle=False)
+val_dataloader = DataLoader(dataset_val, batch_size=config["training"]["batch_size"], shuffle=False)
+
+model.eval()
+
+# predict on the training data, to see how well the model managed to learn and memorize
+
+predicted_train = np.array([])
+
+for idx, (x, y) in enumerate(train_dataloader):
+    x = x.to(config["training"]["device"])
+    out = model(x)
+    out = out.cpu().detach().numpy()
+    predicted_train = np.concatenate((predicted_train, out))
+
+# predict on the validation data, to see how the model does
+
+predicted_val = np.array([])
+
+for idx, (x, y) in enumerate(val_dataloader):
+    x = x.to(config["training"]["device"])
+    out = model(x)
+    out = out.cpu().detach().numpy()
+    predicted_val = np.concatenate((predicted_val, out))
+
+# prepare data for plotting
+
+to_plot_data_y_train_pred = np.zeros(num_data_points)
+to_plot_data_y_val_pred = np.zeros(num_data_points)
+
+to_plot_data_y_train_pred[config["data"]["window_size"]:split_index+config["data"]["window_size"]] = scaler.inverse_transform(predicted_train)
+to_plot_data_y_val_pred[split_index+config["data"]["window_size"]:] = scaler.inverse_transform(predicted_val)
+
+to_plot_data_y_train_pred = np.where(to_plot_data_y_train_pred == 0, None, to_plot_data_y_train_pred)
+to_plot_data_y_val_pred = np.where(to_plot_data_y_val_pred == 0, None, to_plot_data_y_val_pred)
+
+# plots
+
+fig = figure(figsize=(25, 5), dpi=80)
+fig.patch.set_facecolor((1.0, 1.0, 1.0))
+plt.plot(data_date, data_close_price, label="Actual prices", color=config["plots"]["color_actual"])
+plt.plot(data_date, to_plot_data_y_train_pred, label="Predicted prices (train)", color=config["plots"]["color_pred_train"])
+plt.plot(data_date, to_plot_data_y_val_pred, label="Predicted prices (validation)", color=config["plots"]["color_pred_val"])
+plt.title("Compare predicted prices to actual prices")
+xticks = [data_date[i] if ((i%config["plots"]["xticks_interval"]==0 and (num_data_points-i) > config["plots"]["xticks_interval"]) or i==num_data_points-1) else None for i in range(num_data_points)] # make x ticks nice
+x = np.arange(0,len(xticks))
+plt.xticks(x, xticks, rotation='vertical')
+plt.grid(b=None, which='major', axis='y', linestyle='--')
+plt.legend()
+plt.show()
+```
+</details>
+
 ![actual vs predicted](static/figure03-actual-vs-predicted.png)
 
 From our results, the model manages to learn and predict on both training and validation datasets very well, as the `Predicted prices` lines significantly overlap with the `Actual prices` values. 
 
 Let's zoom into the chart and look closely at `Predicted price (validation)`, comparing against its actual prices values.
+
+<details>
+<summary>View codes</summary>
+
+```python
+# prepare data for plotting
+
+to_plot_data_y_val_subset = scaler.inverse_transform(data_y_val)
+to_plot_predicted_val = scaler.inverse_transform(predicted_val)
+to_plot_data_date = data_date[split_index+config["data"]["window_size"]:]
+
+# plots
+
+fig = figure(figsize=(25, 5), dpi=80)
+fig.patch.set_facecolor((1.0, 1.0, 1.0))
+plt.plot(to_plot_data_date, to_plot_data_y_val_subset, label="Actual prices", color=config["plots"]["color_actual"])
+plt.plot(to_plot_data_date, to_plot_predicted_val, label="Predicted prices (validation)", color=config["plots"]["color_pred_val"])
+plt.title("Zoom in to examine predicted price on validation data portion")
+xticks = [to_plot_data_date[i] if ((i%int(config["plots"]["xticks_interval"]/5)==0 and (len(to_plot_data_date)-i) > config["plots"]["xticks_interval"]/6) or i==len(to_plot_data_date)-1) else None for i in range(len(to_plot_data_date))] # make x ticks nice
+xs = np.arange(0,len(xticks))
+plt.xticks(xs, xticks, rotation='vertical')
+plt.grid(b=None, which='major', axis='y', linestyle='--')
+plt.legend()
+plt.show()
+```
+</details>
 
 ![predicted validation zoom in](static/figure04-actual-vs-predicted-zoom.png)
 
@@ -412,7 +572,9 @@ By now, we have trained an LSTM model that can (fairly accurately) predict the n
 
 ![predicted tomorrow price](static/figure05-predict-the-unseen.png)
 
-The model predicts that IBM's close price on April 30, 2021 is $144.23 per share. Is the prediction good enough? How about other stocks such as TSLA, APPL, or the hugely popular Gamestop stock GME? Beyond the close prices, are there any other external data we can feed to the LSTM model to make it even more robust? We will now pass the baton to you, our fearless reader! 
+The model predicts that IBM's close price on April 30, 2021 is $144.23 per share. Is the prediction good enough? How about other stocks such as TSLA, APPL, or the hugely popular Gamestop stock GME? What about other asset classes such as [forex](https://www.alphavantage.co/documentation/#fx) or [cryptocurrencies](https://www.alphavantage.co/documentation/#digital-currency)? Beyond the close prices, are there any other external data we can feed to the LSTM model to make it even more robust - for example, one of the [50+ technical indicators](https://www.alphavantage.co/documentation/#technical-indicators) from the Alpha Vantage APIs? 
+
+We will now pass the baton to you, our fearless reader! 
 
 <details>
 <summary>View codes</summary>
@@ -432,15 +594,13 @@ print("Tomorrow's price:", round(to_plot_data_y_test_pred[plot_range-1], 2))
 
 **Disclaimer**: This content is for educational purposes only and is NOT investment advice. 
 
-# Getting Started
+## For Jupyter Notebook Users: 
 
-## Running the codes on Google Colab
+### Running the codes on Google Colab
 
 Colab is a free hosted Jupyter notebook with access to GPU, you can examine and run the code [here](https://colab.research.google.com/github/jinglescode/time-series-forecasting-pytorch/blob/main/demo-predicting-stock-prices.ipynb).
 
-## Running the codes locally
-
-If you plan to run the codes from your machines, you can get the files by doing a `git clone` using the command line:
+### Running the codes on your local Jupyter Notebook: 
 
 ```
 git clone https://github.com/jinglescode/time-series-forecasting-pytorch.git
@@ -451,9 +611,3 @@ Then, you can install all the packages used in this project with:
 pip install -r requirements.txt
 ```
 
-Alternatively, you can install the following dependencies individually:
-
-- [NumPy](https://github.com/numpy/numpy) - `pip install numpy`
-- [PyTorch](https://github.com/pytorch/pytorch) - `pip install torch`
-- [NumPy](https://github.com/matplotlib/matplotlib) - `pip install matplotlib`
-- [alpha_vantage](https://github.com/RomelTorres/alpha_vantage) - `pip install alpha_vantage`
