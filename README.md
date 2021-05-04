@@ -408,7 +408,7 @@ for epoch in range(config["training"]["num_epoch"]):
               .format(epoch+1, config["training"]["num_epoch"], loss_train, loss_val, lr_train))
 ```
 
-Using *mean squared error* as the loss function to optimize our model, we calculate the loss on training and validation based on how well the model is doing in these two sets. After every epoch, a smaller *loss* value indicates that the model is learning and 0.0 means that no mistakes were made. `Loss train` gives an idea of how well the model is learning, while `loss test` gives an idea of how well the model generalizes on the validation dataset. 
+Using *mean squared error* as the loss function to optimize our model, we calculate the loss on training and validation based on how well the model is doing in these two sets. After every epoch, a smaller *loss* value indicates that the model is learning, and 0.0 means that no mistakes were made. `Loss train` gives an idea of how well the model is learning, while `loss test` shows how well the model generalizes the validation dataset. A well-trained model is identified by a training and validation loss that decreases to the point of stability with relatively small differences between the two final loss values. Generally, the loss of the model will be lower on the training than on the validation dataset.
 
 Console showing the loss and learning rate during training:
 
@@ -697,4 +697,3 @@ Then, you can install all the packages used in this project with:
 ```
 pip install -r requirements.txt
 ```
-
