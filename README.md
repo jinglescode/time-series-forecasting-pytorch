@@ -18,7 +18,7 @@ The project is grouped into the following sections, which are representative of 
 
 By the end of this project, you will have a fully functional LSTM model that predicts future stock prices based on historical price movements, all in a single Python file. This tutorial has been written in a way such that all the essential code snippets have been embedded inline. You should be able to develop, train, and test your machine learning model without referring to other external pages or documents. 
 
-Let's get started! 
+Let's get started!
 
 ## Installing Python dependencies
 
@@ -30,6 +30,9 @@ With Python installed, please go to the Command Line interface of your operating
 - [PyTorch](https://github.com/pytorch/pytorch) - `pip install torch`
 - [Matplotlib](https://github.com/matplotlib/matplotlib) - `pip install matplotlib`
 - [alpha_vantage](https://github.com/RomelTorres/alpha_vantage) - `pip install alpha_vantage`
+
+<details>
+<summary>Create your Python file and follow along the codes in this tutorial</summary>
 
 Now, create a new Python file named `project.py` and paste the following code into the file: 
 
@@ -93,6 +96,7 @@ config = {
 ```
 
 Over the course of this project, we will continue adding new code blocks to the **project.py** file. By the time you reach the end of the tutorial, you should have a fully functional LSTM machine learning model to predict stock market price movements, all in a single Python script. Please feel free to compare your **project.py** with the [official copy](https://github.com/jinglescode/time-series-forecasting-pytorch/blob/main/project.py) if you would like to have a "sanity check" anytime during the project. 
+</details>
 
 ## Data preparation: acquiring financial market data from Alpha Vantage
 
@@ -403,6 +407,8 @@ for epoch in range(config["training"]["num_epoch"]):
     print('Epoch[{}/{}] | loss train:{:.6f}, test:{:.6f} | lr:{:.6f}'
               .format(epoch+1, config["training"]["num_epoch"], loss_train, loss_val, lr_train))
 ```
+
+Using *mean squared error* as the loss function to optimize our model, we calculate the loss on training and validation based on how well the model is doing in these two sets. After every epoch, a smaller *loss* value indicates that the model is learning and 0.0 means that no mistakes were made. `Loss train` gives an idea of how well the model is learning, while `loss test` gives an idea of how well the model generalizes on the validation dataset. 
 
 Console showing the loss and learning rate during training:
 
