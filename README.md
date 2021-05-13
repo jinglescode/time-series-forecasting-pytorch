@@ -353,6 +353,8 @@ The LSTM model learns by iteratively making predictions given the training data 
 
 We use the [Adam optimizer](https://pytorch.org/docs/master/generated/torch.optim.Adam.html) that updates the model's parameters based on the learning rate through its `step()` method. This is how the model learns and fine-tunes its predictions. The learning rate controls how quickly the model converges. A learning rate that is too large can cause the model to converge too quickly to a suboptimal solution, whereas smaller learning rates require more training iterations and may result in prolonged duration for the model to find the optimal solution. We also use the [StepLR scheduler](https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.StepLR.html) to reduce the learning rate during the training process. You may also try the [ReduceLROnPlateau](https://pytorch.org/docs/master/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html) scheduler, which reduces the learning rate when a cost function has stopped improving for a "`patience`" number of epochs. Choosing the proper learning rate for your project is both art and science, and is a heavily researched topic in the machine learning community. 
 
+Using *mean squared error* as the loss function to optimize our model, we calculate the loss on training and validation based on how well the model is doing in these two sets. After every epoch, a smaller *loss* value indicates that the model is learning, and 0.0 means that no mistakes were made. From the console's logs, `loss train` gives an idea of how well the model is learning, while `loss test` shows how well the model generalizes the validation dataset. A well-trained model is identified by a training and validation loss that decreases to the point of stability with relatively small differences between the two final loss values (at this stage, we say the model has "converged"). Generally, the loss of the model will be lower on the training than on the validation dataset.
+
 Append the following code block to your **project.py** file and re-run the file to start the model training process. 
 
 <details>
@@ -407,8 +409,6 @@ for epoch in range(config["training"]["num_epoch"]):
     print('Epoch[{}/{}] | loss train:{:.6f}, test:{:.6f} | lr:{:.6f}'
               .format(epoch+1, config["training"]["num_epoch"], loss_train, loss_val, lr_train))
 ```
-
-Using *mean squared error* as the loss function to optimize our model, we calculate the loss on training and validation based on how well the model is doing in these two sets. After every epoch, a smaller *loss* value indicates that the model is learning, and 0.0 means that no mistakes were made. `Loss train` gives an idea of how well the model is learning, while `loss test` shows how well the model generalizes the validation dataset. A well-trained model is identified by a training and validation loss that decreases to the point of stability with relatively small differences between the two final loss values. Generally, the loss of the model will be lower on the training than on the validation dataset.
 
 Console showing the loss and learning rate during training:
 
